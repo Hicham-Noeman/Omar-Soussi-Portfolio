@@ -366,6 +366,43 @@
     document.getElementById("formError").hidden = true;
   });
 
+  /* ---------- CV viewer pop-up ---------- */
+  var cvDialog = document.getElementById("cvDialog");
+  var cvBody = document.getElementById("cvBody");
+  var cvTabs = cvDialog.querySelectorAll("[data-cv-jump]");
+  function setCvTab(page) {
+    var en = page <= 2;
+    cvTabs.forEach(function (t) { t.setAttribute("aria-pressed", String((t.dataset.cvJump === "1") === en)); });
+  }
+  function jumpTo(page, smooth) {
+    var img = document.getElementById("cv-p" + page);
+    if (!img) return;
+    cvBody.scrollTo({ top: img.offsetTop - cvBody.offsetTop - 12, behavior: smooth && !reduce ? "smooth" : "auto" });
+    setCvTab(page);
+  }
+  document.querySelectorAll("[data-cv-open]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      if (!cvDialog.showModal) return;           // very old browser: just open the PDF
+      e.preventDefault();
+      cvDialog.showModal();
+      document.body.classList.add("no-scroll");
+      // open on the section that matches the site language
+      requestAnimationFrame(function () { jumpTo(current() === "ar" ? 3 : 1, false); });
+    });
+  });
+  cvTabs.forEach(function (t) {
+    t.addEventListener("click", function () { jumpTo(+t.dataset.cvJump, true); });
+  });
+  // keep the active tab in sync while scrolling through the pages
+  cvBody.addEventListener("scroll", function () {
+    var mid = cvBody.scrollTop + cvBody.clientHeight / 3;
+    var p3 = document.getElementById("cv-p3");
+    setCvTab(p3 && mid >= p3.offsetTop - cvBody.offsetTop ? 3 : 1);
+  }, { passive: true });
+  cvDialog.querySelector("[data-cv-close]").addEventListener("click", function () { cvDialog.close(); });
+  cvDialog.addEventListener("click", function (e) { if (e.target === cvDialog) cvDialog.close(); }); // backdrop
+  cvDialog.addEventListener("close", function () { document.body.classList.remove("no-scroll"); });
+
   /* ---------- Privacy note dialog ---------- */
   var privacy = document.getElementById("privacyDialog");
   document.querySelectorAll("[data-privacy]").forEach(function (b) {
