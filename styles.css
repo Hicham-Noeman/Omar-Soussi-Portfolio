@@ -282,6 +282,8 @@ html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; 
   padding: 12px 0; border-bottom: 1px dashed var(--line); font-size: .96rem; color: var(--ink-soft);
   display: flex; gap: 10px;
 }
+.more-link { display: inline-block; margin-top: 14px; font-weight: 600; font-size: .95rem; color: var(--primary-ink); text-decoration: none; }
+.more-link:hover { text-decoration: underline; text-underline-offset: 4px; }
 .cert-list li::before { content: "◆"; color: var(--gold); font-size: .7rem; padding-top: .45em; }
 
 .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 56px; }
@@ -309,36 +311,8 @@ html[dir="rtl"] .lang-bars i::after { background: linear-gradient(-90deg, var(--
   box-shadow: 0 30px 60px -30px rgba(15, 76, 69, .35); border: 1px solid var(--line);
   min-width: 0;
 }
-.book-tabs {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
-  background: var(--tint); border-radius: 999px; margin-bottom: 20px;
-}
-.book-tab {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: 0; background: transparent; color: var(--ink-soft); font-weight: 600; font-size: .95rem;
-  padding: 10px 12px; border-radius: 999px; transition: background .2s, color .2s, box-shadow .2s;
-}
-.book-tab:hover { color: var(--ink); }
-.book-tab[aria-selected="true"] { background: var(--surface); color: var(--primary-ink); box-shadow: 0 2px 8px -2px rgba(15, 76, 69, .25); }
-.book-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .book-form { padding: 4px clamp(4px, 1.5vw, 10px) 6px; }
-.book-form[hidden], .book-cal[hidden] { display: none; }
 
-.cal-embed { min-height: 0; border-radius: 16px; overflow: hidden; }
-.cal-embed.loaded { min-height: 680px; }
-.cal-embed .calendly-inline-widget { min-width: 280px; height: 680px; }
-.cal-loading { display: grid; place-items: center; height: 300px; color: var(--ink-soft); font-size: .95rem; }
-.cal-loading::before {
-  content: ""; width: 28px; height: 28px; border-radius: 50%; margin-bottom: 10px;
-  border: 3px solid var(--line); border-top-color: var(--primary); animation: spin 0.9s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.cal-empty {
-  text-align: center; padding: 40px 20px; border: 1.5px dashed var(--line); border-radius: 16px; background: var(--paper);
-}
-.cal-empty p { color: var(--ink-soft); }
-.cal-empty strong { color: var(--ink); }
-.cal-note { font-size: .85rem; color: var(--ink-soft); margin: 14px 4px 0; text-align: center; }
 
 /* CV card */
 .cv-card {
@@ -657,10 +631,7 @@ body.no-scroll { overflow: hidden; }
   .refer-actions { width: 100%; }
   .refer-actions .btn { flex: 1 1 100%; }
   .theme-toggle { width: 38px; height: 38px; }
-  .book-tab { font-size: .88rem; padding: 10px 8px; }
-  .cal-embed.loaded { min-height: 760px; }
-  .cal-embed .calendly-inline-widget { height: 760px; }
-  .cv-file-name { flex-basis: calc(100% - 60px); }
+        .cv-file-name { flex-basis: calc(100% - 60px); }
   .cv-btn { flex: 1; }
 
   /* select becomes a bottom sheet */
