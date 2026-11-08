@@ -95,6 +95,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    /* Apply the saved / system theme before the page paints (no white flash in dark mode) */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("theme"); } catch (e) {}
+      if (t !== "light" && t !== "dark") t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -116,11 +126,16 @@
       <a href="#journey"><span class="ar">المسيرة</span><span class="en">Journey</span></a>
       <a href="#community"><span class="ar">المبادرات</span><span class="en">Initiatives</span></a>
       <a href="#education"><span class="ar">التعليم</span><span class="en">Education</span></a>
+      <a href="#quiz"><span class="ar">اختبر مستواك</span><span class="en">Level quiz</span></a>
       <a href="#faq"><span class="ar">أسئلة</span><span class="en">FAQ</span></a>
       <a href="#book" class="nav-cta"><span class="ar">جلسة مجانية</span><span class="en">Free session</span></a>
     </nav>
 
     <div class="header-actions">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Dark / light">
+        <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+      </button>
       <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">
         <span class="ar">English</span><span class="en">عربي</span>
       </button>
@@ -307,6 +322,81 @@
         <p><span class="ar">مع متابعة وتغذية راجعة منتظمة.</span><span class="en">With regular follow-up and feedback.</span></p></div>
       </li>
     </ol>
+  </div>
+</section>
+
+<!-- ============ LEVEL QUIZ ============ -->
+<section class="section" id="quiz">
+  <div class="container">
+    <div class="section-head center reveal">
+      <p class="kicker"><span class="ar">اختبار سريع</span><span class="en">Quick quiz</span></p>
+      <h2><span class="ar">اختبر مستواك في العربية</span><span class="en">Test your Arabic level</span></h2>
+      <p class="section-sub">
+        <span class="ar">6 أسئلة، دقيقتان فقط. اعرف مستواك ثم احجز جلستك المجانية لنضع خطتك.</span>
+        <span class="en">6 questions, 2 minutes. Find out your level, then book your free session to build your plan.</span>
+      </p>
+    </div>
+
+    <div class="quiz reveal" id="quiz-app">
+      <!-- Start screen -->
+      <div class="quiz-screen" data-screen="start">
+        <p class="quiz-ask"><span class="ar">من أنت؟</span><span class="en">Which describes you?</span></p>
+        <div class="quiz-tracks">
+          <button type="button" class="quiz-track" data-track="native">
+            <span class="quiz-track-icon" aria-hidden="true">ض</span>
+            <strong><span class="ar">العربية لغتي الأم</span><span class="en">Arabic is my first language</span></strong>
+            <small><span class="ar">طالب مدرسة: قواعد، إعراب، إملاء وبلاغة</span><span class="en">School student: grammar, iʿrāb, spelling &amp; rhetoric</span></small>
+          </button>
+          <button type="button" class="quiz-track" data-track="learner">
+            <span class="quiz-track-icon" aria-hidden="true">أ</span>
+            <strong><span class="ar">أتعلّم العربية</span><span class="en">I'm learning Arabic</span></strong>
+            <small><span class="ar">ناطق بغير العربية: حروف، مفردات وقواعد أساسية</span><span class="en">Non-native: letters, vocabulary &amp; basic grammar</span></small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Question screen -->
+      <div class="quiz-screen" data-screen="question" hidden>
+        <div class="quiz-top">
+          <span class="quiz-count" id="quizCount"></span>
+          <button type="button" class="link-btn quiz-restart" data-restart><span class="ar">البدء من جديد</span><span class="en">Start over</span></button>
+        </div>
+        <div class="quiz-progress" aria-hidden="true"><span id="quizBar"></span></div>
+        <div class="quiz-q" id="quizQ"></div>
+        <div class="quiz-options" id="quizOptions" role="group"></div>
+        <div class="quiz-feedback" id="quizFeedback" aria-live="polite"></div>
+        <div class="quiz-next-wrap">
+          <button type="button" class="btn btn-primary" id="quizNext" hidden></button>
+        </div>
+      </div>
+
+      <!-- Result screen -->
+      <div class="quiz-screen" data-screen="result" hidden>
+        <div class="quiz-result">
+          <div class="quiz-score" id="quizScore" aria-hidden="true">
+            <svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="52"/><circle class="ring" id="quizRing" cx="60" cy="60" r="52"/></svg>
+            <span id="quizScoreText"></span>
+          </div>
+          <div class="quiz-result-text">
+            <p class="quiz-level-label"><span class="ar">مستواك</span><span class="en">Your level</span></p>
+            <h3 id="quizLevel"></h3>
+            <p id="quizAdvice"></p>
+          </div>
+        </div>
+        <div class="quiz-actions">
+          <a href="#book" class="btn btn-primary" id="quizBook"><span class="ar">احجز جلستك المجانية</span><span class="en">Book your free session</span></a>
+          <button type="button" class="btn btn-ghost" data-share="quiz">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></g></svg>
+            <span class="ar">تحدَّ صديقاً</span><span class="en">Challenge a friend</span>
+          </button>
+          <button type="button" class="link-btn" data-restart><span class="ar">أعد الاختبار</span><span class="en">Retake the quiz</span></button>
+        </div>
+        <details class="quiz-review">
+          <summary><span class="ar">راجع إجاباتك</span><span class="en">Review your answers</span></summary>
+          <ol id="quizReview"></ol>
+        </details>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -641,6 +731,23 @@
         <span><span class="ar">الجلسة الأولى (30 دقيقة، أونلاين) مجانية وبلا التزام.</span><span class="en">The first session (30 min, online) is free, with no commitment.</span></span>
       </p>
 
+      <div class="tz" id="tzHelper" aria-live="polite">
+        <div class="tz-clock">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></svg>
+        </div>
+        <div class="tz-rows">
+          <div class="tz-row">
+            <small><span class="ar">الوقت الآن في طرابلس</span><span class="en">Now in Tripoli</span></small>
+            <strong id="tzTripoli">--:--</strong>
+          </div>
+          <div class="tz-row" id="tzYouRow">
+            <small><span class="ar">الوقت عندك</span><span class="en">Your time</span> <span class="tz-zone" id="tzZone"></span></small>
+            <strong id="tzYou">--:--</strong>
+          </div>
+        </div>
+        <p class="tz-diff" id="tzDiff"></p>
+      </div>
+
       <ul class="contact-list">
         <li>
           <span class="ci ci-wa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.7-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.1-.3-.2-.5-.3Z"/></svg></span>
@@ -742,6 +849,30 @@
         <button type="button" class="link-btn" data-privacy><span class="ar">سياسة الخصوصية</span><span class="en">Privacy note</span></button>
       </p>
     </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFER A FRIEND ============ -->
+<section class="refer">
+  <div class="container refer-inner reveal">
+    <div class="refer-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="28" height="28"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M17 8v6M14 11h6"/></g></svg>
+    </div>
+    <div class="refer-text">
+      <h2><span class="ar">تعرف أحداً يريد تعلّم العربية؟</span><span class="en">Know someone who wants to learn Arabic?</span></h2>
+      <p><span class="ar">شارك الموقع مع صديق أو قريب، فجلسته الأولى مجانية أيضاً.</span><span class="en">Share this page with a friend or relative. Their first session is free too.</span></p>
+    </div>
+    <div class="refer-actions">
+      <button type="button" class="btn btn-primary btn-wa" data-share="refer">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.7-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.1-.3-.2-.5-.3Z"/></svg>
+        <span class="ar">شارك على واتساب</span><span class="en">Share on WhatsApp</span>
+      </button>
+      <button type="button" class="btn btn-ghost" data-copy-link>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></svg>
+        <span class="copy-label"><span class="ar">نسخ الرابط</span><span class="en">Copy link</span></span>
+        <span class="copied-label" hidden><span class="ar">تمّ النسخ ✓</span><span class="en">Copied ✓</span></span>
+      </button>
     </div>
   </div>
 </section>

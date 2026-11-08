@@ -466,6 +466,353 @@
   privacy.addEventListener("click", function (e) { if (e.target === privacy) closePrivacy(); }); // click on backdrop
   privacy.addEventListener("close", function () { document.body.classList.remove("no-scroll"); });
 
+  /* =========================================================
+     DARK MODE
+     ========================================================= */
+  var themeBtn = document.getElementById("themeToggle");
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
+  function applyTheme(t, save) {
+    root.setAttribute("data-theme", t);
+    if (themeMeta) themeMeta.setAttribute("content", t === "dark" ? "#0e1615" : "#0f4c45");
+    themeBtn.setAttribute("aria-pressed", String(t === "dark"));
+    if (save) { try { localStorage.setItem("theme", t); } catch (e) {} }
+  }
+  applyTheme(root.getAttribute("data-theme") || "light", false);
+  themeBtn.addEventListener("click", function () {
+    root.classList.add("theme-anim");
+    applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark", true);
+    setTimeout(function () { root.classList.remove("theme-anim"); }, 450);
+  });
+  // follow the phone/computer setting until the visitor picks a theme themselves
+  var mqDark = window.matchMedia("(prefers-color-scheme: dark)");
+  var onSystemTheme = function (e) {
+    var saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (err) {}
+    if (!saved) applyTheme(e.matches ? "dark" : "light", false);
+  };
+  if (mqDark.addEventListener) mqDark.addEventListener("change", onSystemTheme);
+  else if (mqDark.addListener) mqDark.addListener(onSystemTheme);
+
+  /* =========================================================
+     TIME-ZONE HELPER (Tripoli time vs visitor's time)
+     ========================================================= */
+  var TRIPOLI_TZ = "Asia/Beirut";
+  var userTZ = "";
+  try { userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+
+  function tzOffsetMinutes(tz, date) {
+    // minutes ahead of UTC for a given IANA zone
+    var parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit"
+    }).formatToParts(date);
+    var v = {};
+    parts.forEach(function (p) { v[p.type] = p.value; });
+    var asUTC = Date.UTC(+v.year, +v.month - 1, +v.day, +v.hour % 24, +v.minute);
+    return Math.round((asUTC - date.getTime()) / 60000);
+  }
+  function fmtTime(tz, date) {
+    var loc = current() === "ar" ? "ar-LB-u-nu-latn" : "en-US";
+    return new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "short", hour: "numeric", minute: "2-digit" }).format(date);
+  }
+  function cityName(tz) {
+    var c = tz.split("/").pop() || tz;
+    return c.replace(/_/g, " ");
+  }
+  function renderTZ() {
+    var elT = document.getElementById("tzTripoli");
+    if (!elT) return;
+    var now = new Date();
+    try {
+      elT.textContent = fmtTime(TRIPOLI_TZ, now);
+    } catch (e) { document.getElementById("tzHelper").hidden = true; return; }
+
+    var youRow = document.getElementById("tzYouRow");
+    var diffEl = document.getElementById("tzDiff");
+    var ar = current() === "ar";
+    var diff = userTZ ? (tzOffsetMinutes(TRIPOLI_TZ, now) - tzOffsetMinutes(userTZ, now)) : 0;
+
+    if (!userTZ || diff === 0) {
+      youRow.hidden = true;
+      diffEl.textContent = ar ? "أنت في نفس توقيت طرابلس." : "You're in the same time zone as Tripoli.";
+      return;
+    }
+    youRow.hidden = false;
+    document.getElementById("tzYou").textContent = fmtTime(userTZ, now);
+    document.getElementById("tzZone").textContent = "(" + cityName(userTZ) + ")";
+    var h = Math.abs(diff) / 60;
+    var hTxt = (h % 1 === 0) ? String(h) : h.toFixed(1).replace(/\.0$/, "");
+    if (ar) {
+      // Arabic number agreement: ساعة واحدة / ساعتين / 3–10 ساعات / 11+ ساعة
+      var unit = h === 1 ? "ساعة واحدة" : h === 2 ? "ساعتين" : (h >= 3 && h <= 10 && h % 1 === 0) ? hTxt + " ساعات" : hTxt + " ساعة";
+      diffEl.textContent = diff > 0
+        ? "طرابلس متقدّمة عليك بـ" + unit + "."
+        : "طرابلس متأخّرة عنك بـ" + unit + ".";
+    } else {
+      var hrs = hTxt + (h === 1 ? " hour" : " hours");
+      diffEl.textContent = diff > 0 ? "Tripoli is " + hrs + " ahead of you." : "Tripoli is " + hrs + " behind you.";
+    }
+  }
+  renderTZ();
+  setInterval(renderTZ, 20000);
+
+  /* =========================================================
+     SHARING (refer a friend + quiz challenge), WhatsApp only
+     ========================================================= */
+  var canonical = document.querySelector('link[rel="canonical"]');
+  function siteURL() {
+    if (/^https?:$/.test(location.protocol)) return location.origin + location.pathname;
+    return canonical ? canonical.href : "";
+  }
+  function shareOnWhatsApp(text) {
+    window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
+  }
+  document.querySelectorAll('[data-share="refer"]').forEach(function (b) {
+    b.addEventListener("click", function () {
+      var url = siteURL();
+      shareOnWhatsApp(current() === "ar"
+        ? "تريد أن تتعلّم العربية أو تحسّن مستواك؟ 📚\nالأستاذ عمر السوسي يعطي دروساً خاصة، والجلسة الأولى (30 دقيقة أونلاين) مجانية 👇\n" + url
+        : "Want to learn Arabic or improve your level? 📚\nOmar Soussi gives private lessons, and the first session (30 min online) is free 👇\n" + url);
+    });
+  });
+  document.querySelectorAll("[data-copy-link]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var url = siteURL();
+      var done = function () {
+        b.querySelector(".copy-label").hidden = true;
+        b.querySelector(".copied-label").hidden = false;
+        setTimeout(function () {
+          b.querySelector(".copy-label").hidden = false;
+          b.querySelector(".copied-label").hidden = true;
+        }, 2000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(done, function () { fallbackCopy(url); done(); });
+      } else { fallbackCopy(url); done(); }
+    });
+  });
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  /* =========================================================
+     LEVEL QUIZ
+     ========================================================= */
+  var QUIZ = {
+    learner: [
+      { q: { ar: "ما اسم هذا الحرف؟", en: "What is the name of this letter?" }, show: "ج", big: true,
+        opts: ["جيم · Jīm", "حاء · Ḥāʾ", "خاء · Khāʾ", "عين · ʿAyn"], a: 0,
+        why: { ar: "«ج» اسمه جيم، ويشبه الحاء والخاء في الشكل لكن بنقطة واحدة تحته.", en: "«ج» is Jīm: the same shape as Ḥāʾ and Khāʾ, with one dot below." } },
+      { q: { ar: "ما معنى كلمة «بَيْت»؟", en: "What does «بَيْت» mean?" }, show: "بَيْت", big: true,
+        opts: ["House", "Book", "Door", "Girl"], a: 0, latin: true,
+        why: { ar: "«بيت» تعني House. أما Book فهي «كتاب»، وDoor «باب»، وGirl «بنت».", en: "بيت (bayt) = house. Book = كتاب, door = باب, girl = بنت." } },
+      { q: { ar: "أيّ جملة تعني “I am a student”؟", en: "Which sentence means “I am a student”?" },
+        opts: ["أنا طالبٌ", "أنتَ طالبٌ", "هو طالبٌ", "نحن طلّابٌ"], a: 0,
+        why: { ar: "«أنا» ضمير المتكلّم. «أنتَ» للمخاطَب، «هو» للغائب، «نحن» للجماعة.", en: "أنا = I. أنتَ = you, هو = he, نحن = we." } },
+      { q: { ar: "ما جمع كلمة «كِتاب»؟", en: "What is the plural of «كِتاب» (book)?" },
+        opts: ["كُتُب", "كِتابان", "كاتِب", "مَكتَبة"], a: 0,
+        why: { ar: "«كُتُب» هو الجمع. «كتابان» مثنّى، «كاتب» من يكتب، «مكتبة» مكان الكتب.", en: "كُتُب is the plural. كتابان = two books, كاتب = writer, مكتبة = library." } },
+      { q: { ar: "أكمل الفراغ بالكلمة المناسبة:", en: "Fill in the blank:" }, show: "ذهبتُ ____ المدرسةِ",
+        opts: ["إلى", "لكنْ", "هل", "ثُمَّ"], a: 0,
+        why: { ar: "«إلى» حرف جرّ يدلّ على الاتجاه: ذهبتُ إلى المدرسةِ.", en: "إلى (to) is the preposition: ذهبتُ إلى المدرسةِ = I went to school." } },
+      { q: { ar: "أيّ جملة صحيحة نحوياً؟", en: "Which sentence is grammatically correct?" },
+        opts: ["هذه سيارةٌ جميلةٌ", "هذا سيارةٌ جميلٌ", "هذه سيارةٌ جميلٌ", "هذا سيارةٌ جميلةٌ"], a: 0,
+        why: { ar: "«سيارة» مؤنّثة، فيجب أن يكون اسم الإشارة «هذه» والصفة «جميلة» مؤنّثين.", en: "سيارة is feminine, so both هذه and the adjective جميلة must be feminine too." } }
+    ],
+    native: [
+      { q: { ar: "ما إعراب كلمة «الطالبُ» في الجملة؟", en: "What is the iʿrāb of «الطالبُ» in this sentence?" }, show: "نجحَ الطالبُ في الامتحانِ",
+        opts: ["فاعلٌ مرفوعٌ", "مبتدأٌ مرفوعٌ", "مفعولٌ به منصوبٌ", "خبرٌ مرفوعٌ"], a: 0,
+        why: { ar: "«الطالبُ» فاعل مرفوع وعلامة رفعه الضمّة، لأنه مَن قام بفعل «نجح».", en: "It's the fāʿil (subject) of the verb نجح, so it's marfūʿ with a ḍamma." } },
+      { q: { ar: "اختر الجملة الصحيحة:", en: "Choose the correct sentence:" },
+        opts: ["إنّ المعلّمَ مجتهدٌ", "إنّ المعلّمُ مجتهدٌ", "إنّ المعلّمَ مجتهداً", "إنّ المعلّمُ مجتهداً"], a: 0,
+        why: { ar: "«إنّ» تنصب الاسم (المعلّمَ) وترفع الخبر (مجتهدٌ).", en: "إنّ makes its noun manṣūb (المعلّمَ) and its predicate marfūʿ (مجتهدٌ)." } },
+      { q: { ar: "ما علامة جزم الفعل في الجملة؟", en: "What marks the verb as majzūm here?" }, show: "لم يكتبْ واجبَهُ",
+        opts: ["السكون", "حذف النون", "حذف حرف العلّة", "الفتحة"], a: 0,
+        why: { ar: "«لم» حرف جزم، و«يكتبْ» فعل مضارع صحيح الآخر، فيُجزم بالسكون.", en: "لم is a jussive particle and يكتب is a sound verb, so it's majzūm with a sukūn." } },
+      { q: { ar: "ما نوع «كان» في الجملة؟", en: "What type of verb is «كان» here?" }, show: "كانَ الجوُّ جميلاً",
+        opts: ["فعلٌ ماضٍ ناقصٌ", "فعلٌ ماضٍ تامٌّ", "حرفٌ مشبّهٌ بالفعل", "فعلُ أمرٍ"], a: 0,
+        why: { ar: "«كان» فعل ماضٍ ناقص ناسخ: رفع «الجوُّ» اسماً له، ونصب «جميلاً» خبراً له.", en: "Here كان is a nāqiṣ (incomplete) verb: الجوُّ is its noun and جميلاً its predicate." } },
+      { q: { ar: "اختر الكتابة الصحيحة:", en: "Choose the correct spelling:" },
+        opts: ["شاطِئ", "شاطيء", "شاطأ", "شاطؤ"], a: 0,
+        why: { ar: "الهمزة متطرّفة وما قبلها مكسور، فتُكتب على نبرة: شاطِئ.", en: "A final hamza after a kasra is written on a yāʾ seat (ئ): شاطِئ." } },
+      { q: { ar: "ما الصورة البيانية في هذه العبارة؟", en: "What figure of speech is this?" }, show: "العلمُ نورٌ",
+        opts: ["تشبيهٌ بليغٌ", "استعارةٌ مكنيّةٌ", "كنايةٌ", "طباقٌ"], a: 0,
+        why: { ar: "شُبّه العلم بالنور مع حذف الأداة ووجه الشبه، فهو تشبيه بليغ.", en: "Knowledge is likened to light with both the particle and the point of comparison dropped: tashbīh balīgh." } }
+    ]
+  };
+  var BANDS = {
+    learner: [
+      { max: 1, ar: "مبتدئ", en: "Beginner",
+        adv: { ar: "سنبدأ معاً بالحروف والأصوات وأولى الكلمات، خطوة بخطوة.", en: "We'll start with the alphabet, sounds and your first words, step by step." } },
+      { max: 3, ar: "أساسي", en: "Elementary",
+        adv: { ar: "لديك الأساسيات. الخطوة التالية: القواعد الأساسية، مفردات الحياة اليومية، والقراءة البسيطة.", en: "You know the basics. Next: core grammar, everyday vocabulary and simple reading." } },
+      { max: 5, ar: "متوسّط", en: "Intermediate",
+        adv: { ar: "مستوى جيد! سنعمل على الطلاقة: نصوص أطول، محادثة، ودقّة في القواعد.", en: "Good level! We'll build fluency: longer texts, conversation and accurate grammar." } },
+      { max: 6, ar: "متقدّم", en: "Advanced",
+        adv: { ar: "ممتاز! سنركّز على التفاصيل الدقيقة: قراءة نصوص أصيلة، الكتابة، والتحدّث بطلاقة.", en: "Excellent! We'll work on nuance: authentic texts, writing and fluent speaking." } }
+    ],
+    native: [
+      { max: 2, ar: "تحتاج إلى تأسيس", en: "Needs a stronger foundation",
+        adv: { ar: "سنعيد بناء أساسيات القواعد والإعراب بقواعد واضحة وتمارين كثيرة.", en: "We'll rebuild the basics of grammar and iʿrāb with clear rules and plenty of practice." } },
+      { max: 4, ar: "مستوى جيد", en: "Good level",
+        adv: { ar: "لديك الأساس. سنسدّ الثغرات في الإعراب والإملاء والبلاغة قبل الامتحانات.", en: "You have the basics. We'll fill the gaps in iʿrāb, spelling and rhetoric before exams." } },
+      { max: 5, ar: "جيد جداً", en: "Very good",
+        adv: { ar: "مستوى قوي! بضع جلسات مركّزة ستجعل إجاباتك كاملة في الامتحان.", en: "Strong level! A few focused sessions will make your exam answers perfect." } },
+      { max: 6, ar: "ممتاز", en: "Excellent",
+        adv: { ar: "ممتاز! يمكننا التركيز على التحليل المتقدّم والكتابة والتفوّق في الامتحانات.", en: "Excellent! We can focus on advanced analysis, writing and top exam results." } }
+    ]
+  };
+
+  var quizEl = document.getElementById("quiz-app");
+  var qs = { track: null, list: [], i: 0, score: 0, answers: [] };
+  // Isolate Arabic runs inside English text (and Latin runs inside Arabic) so «quotes» and order don't flip
+  function isoAr(t) { return String(t).replace(/[؀-ۿ](?:[؀-ۿً-ٰٟ ]*[؀-ۿً-ٰٟ])?/g, function (m) { return '<bdi dir="rtl">' + m + "</bdi>"; }); }
+  function isoEn(t) { return String(t).replace(/[A-Za-zÀ-ɏʾʿḀ-ỿ](?:[A-Za-zÀ-ɏʾʿḀ-ỿ' ]*[A-Za-zÀ-ɏʾʿḀ-ỿ])?/g, function (m) { return '<bdi dir="ltr">' + m + "</bdi>"; }); }
+  function bi(o) { return '<span class="ar">' + isoEn(o.ar) + '</span><span class="en">' + isoAr(o.en) + "</span>"; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function shuffle(arr) {
+    for (var k = arr.length - 1; k > 0; k--) { var j = Math.floor(Math.random() * (k + 1)); var t = arr[k]; arr[k] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+  function screen(name) {
+    quizEl.querySelectorAll(".quiz-screen").forEach(function (s) { s.hidden = s.dataset.screen !== name; });
+  }
+  function startQuiz(track) {
+    qs.track = track;
+    qs.list = QUIZ[track].map(function (q) {
+      // shuffle options but remember which one is right
+      var order = shuffle(q.opts.map(function (_, idx) { return idx; }));
+      return { src: q, order: order };
+    });
+    qs.i = 0; qs.score = 0; qs.answers = [];
+    screen("question");
+    renderQuestion();
+    quizEl.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+  function renderQuestion() {
+    var item = qs.list[qs.i], q = item.src, total = qs.list.length;
+    document.getElementById("quizCount").innerHTML =
+      '<span class="ar">السؤال ' + (qs.i + 1) + " من " + total + '</span><span class="en">Question ' + (qs.i + 1) + " of " + total + "</span>";
+    document.getElementById("quizBar").style.width = ((qs.i) / total * 100) + "%";
+    document.getElementById("quizQ").innerHTML =
+      '<div class="q-text">' + bi(q.q) + "</div>" +
+      (q.show ? '<span class="q-ar' + (q.big ? " big" : "") + '">' + esc(q.show) + "</span>" : "");
+    var keys = ["A", "B", "C", "D"];
+    var box = document.getElementById("quizOptions");
+    box.innerHTML = item.order.map(function (origIdx, pos) {
+      return '<button type="button" class="quiz-opt" data-orig="' + origIdx + '">' +
+        '<span class="opt-key">' + keys[pos] + "</span>" +
+        '<bdi class="' + (q.latin ? "" : "opt-ar") + '">' + esc(q.opts[origIdx]) + "</bdi></button>";
+    }).join("");
+    var fb = document.getElementById("quizFeedback");
+    fb.className = "quiz-feedback"; fb.innerHTML = "";
+    document.getElementById("quizNext").hidden = true;
+    var first = box.querySelector(".quiz-opt");
+    if (first && qs.i > 0) first.focus({ preventScroll: true });
+  }
+  function answer(btn) {
+    var item = qs.list[qs.i], q = item.src;
+    var chosen = +btn.dataset.orig, ok = chosen === q.a;
+    if (ok) qs.score++;
+    qs.answers.push({ q: q, chosen: chosen, ok: ok });
+    document.querySelectorAll("#quizOptions .quiz-opt").forEach(function (b) {
+      b.disabled = true;
+      var o = +b.dataset.orig;
+      if (o === q.a) b.classList.add("correct");
+      else if (b === btn) b.classList.add("wrong");
+      else b.classList.add("dim");
+    });
+    var fb = document.getElementById("quizFeedback");
+    fb.className = "quiz-feedback " + (ok ? "ok" : "no");
+    fb.innerHTML = (ok ? bi({ ar: "✓ إجابة صحيحة!", en: "✓ Correct!" }) : bi({ ar: "✗ ليست هذه الإجابة", en: "✗ Not quite" })) +
+      "<small>" + bi(q.why) + "</small>";
+    var next = document.getElementById("quizNext");
+    var last = qs.i === qs.list.length - 1;
+    next.innerHTML = last ? bi({ ar: "اعرض نتيجتي", en: "See my result" }) : bi({ ar: "السؤال التالي ←", en: "Next question →" });
+    next.hidden = false;
+    next.focus({ preventScroll: true });
+  }
+  function showResult() {
+    screen("result");
+    document.getElementById("quizBar").style.width = "100%";
+    var total = qs.list.length, s = qs.score;
+    var band = BANDS[qs.track].filter(function (b) { return s <= b.max; })[0];
+    qs.band = band;
+    document.getElementById("quizScoreText").textContent = s + "/" + total;
+    document.getElementById("quizLevel").innerHTML = bi(band);
+    document.getElementById("quizAdvice").innerHTML = bi(band.adv);
+    var ring = document.getElementById("quizRing");
+    ring.style.strokeDashoffset = 326.7;
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      ring.style.strokeDashoffset = 326.7 * (1 - s / total);
+    }); });
+    document.getElementById("quizReview").innerHTML = qs.answers.map(function (a) {
+      return "<li><b>" + bi(a.q.q) + "</b>" + (a.q.show ? ' <bdi class="ar-inline" dir="rtl">' + esc(a.q.show) + "</bdi>" : "") + "<br>" +
+        (a.ok
+          ? '<span class="rv-ok">✓ <bdi>' + esc(a.q.opts[a.q.a]) + "</bdi></span>"
+          : '<span class="rv-no">✗ <bdi>' + esc(a.q.opts[a.chosen]) + "</bdi></span>" +
+            ' <span class="rv-arrow">' + bi({ ar: "← الصحيح:", en: "→ correct:" }) + '</span> <span class="rv-ok"><bdi>' + esc(a.q.opts[a.q.a]) + "</bdi></span>") +
+        "</li>";
+    }).join("");
+    quizEl.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
+  quizEl.querySelectorAll("[data-track]").forEach(function (b) {
+    b.addEventListener("click", function () { startQuiz(b.dataset.track); });
+  });
+  document.getElementById("quizOptions").addEventListener("click", function (e) {
+    var b = e.target.closest(".quiz-opt");
+    if (b && !b.disabled) answer(b);
+  });
+  document.getElementById("quizNext").addEventListener("click", function () {
+    if (qs.i < qs.list.length - 1) { qs.i++; renderQuestion(); }
+    else showResult();
+  });
+  quizEl.querySelectorAll("[data-restart]").forEach(function (b) {
+    b.addEventListener("click", function () { screen("start"); document.getElementById("quizBar").style.width = "0"; });
+  });
+  // keyboard shortcuts A–D / 1–4 while a question is open
+  document.addEventListener("keydown", function (e) {
+    if (quizEl.querySelector('[data-screen="question"]').hidden) return;
+    if (e.target.matches("input, textarea, select")) return;
+    var map = { a: 0, b: 1, c: 2, d: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
+    var idx = map[(e.key || "").toLowerCase()];
+    if (idx === undefined) return;
+    var opts = document.querySelectorAll("#quizOptions .quiz-opt");
+    if (opts[idx] && !opts[idx].disabled) answer(opts[idx]);
+  });
+
+  // "Book your free session" from the result: prefill the form with the quiz result
+  document.getElementById("quizBook").addEventListener("click", function () {
+    var b = qs.band; if (!b) return;
+    var total = qs.list.length;
+    var trackTxt = qs.track === "native"
+      ? { ar: "العربية لغتي الأم", en: "Arabic is my first language" }
+      : { ar: "أتعلّم العربية", en: "I'm learning Arabic" };
+    var lang = current();
+    form.elements.level.value = b[lang];
+    form.elements.message.value = lang === "ar"
+      ? "نتيجتي في اختبار المستوى: " + qs.score + "/" + total + " (" + b.ar + "، " + trackTxt.ar + ")."
+      : "My level-quiz result: " + qs.score + "/" + total + " (" + b.en + ", " + trackTxt.en + ").";
+    showTab("msg");
+  });
+  // "Challenge a friend" from the result
+  document.querySelectorAll('[data-share="quiz"]').forEach(function (b) {
+    b.addEventListener("click", function () {
+      var url = siteURL() + "#quiz", total = qs.list.length;
+      shareOnWhatsApp(current() === "ar"
+        ? "حصلتُ على " + qs.score + "/" + total + " في اختبار مستوى العربية 🎯 هل تستطيع أن تتفوّق عليّ؟ جرّبه هنا 👇\n" + url
+        : "I scored " + qs.score + "/" + total + " on this Arabic level quiz 🎯 Can you beat me? Try it here 👇\n" + url);
+    });
+  });
+
+  // re-render time strings when the language changes
+  document.getElementById("langToggle").addEventListener("click", function () { renderTZ(); });
+
   /* ---------- Footer year ---------- */
   document.getElementById("year").textContent = new Date().getFullYear();
 })();
