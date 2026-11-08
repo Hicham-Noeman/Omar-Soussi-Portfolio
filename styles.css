@@ -868,3 +868,26 @@ html.theme-anim, html.theme-anim *, html.theme-anim *::before, html.theme-anim *
   .theme-toggle { width: 38px; height: 38px; }
   .header-actions { gap: 6px; }
 }
+
+/* ============ ANIMATED SWITCHES (View Transitions) ============ */
+/* theme: new theme is revealed in a growing circle (clip-path animated in JS) */
+html.vt-theme::view-transition-old(root),
+html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.vt-theme::view-transition-new(root) { z-index: 2; }
+
+/* language: like turning a page in the new language's reading direction
+   to Arabic (RTL): old page moves right, new page comes in from the left
+   to English (LTR): old page moves left, new page comes in from the right */
+html.vt-to-ar::view-transition-old(root) { animation: vt-old-to-right .28s cubic-bezier(.4,0,1,1) both; }
+html.vt-to-ar::view-transition-new(root) { animation: vt-new-from-left .42s cubic-bezier(0,0,.2,1) .06s both; }
+html.vt-to-en::view-transition-old(root) { animation: vt-old-to-left .28s cubic-bezier(.4,0,1,1) both; }
+html.vt-to-en::view-transition-new(root) { animation: vt-new-from-right .42s cubic-bezier(0,0,.2,1) .06s both; }
+
+@keyframes vt-old-to-right   { to   { opacity: 0; transform: translateX(28px);  filter: blur(2px); } }
+@keyframes vt-new-from-left  { from { opacity: 0; transform: translateX(-28px); filter: blur(2px); } }
+@keyframes vt-old-to-left    { to   { opacity: 0; transform: translateX(-28px); filter: blur(2px); } }
+@keyframes vt-new-from-right { from { opacity: 0; transform: translateX(28px);  filter: blur(2px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}

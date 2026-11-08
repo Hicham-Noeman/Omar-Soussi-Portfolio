@@ -2,6 +2,7 @@
   "use strict";
 
   var PHONE = "96171752289";
+  var inViewTransition = false, replaying = false; // used by the animated language/theme switch
 
   /* ==========================================================
      SOCIAL LINKS: paste full profile links; leave "" to hide.
@@ -393,7 +394,8 @@
   }
   applyTheme(root.getAttribute("data-theme") || "light", false);
   themeBtn.addEventListener("click", function () {
-    root.classList.add("theme-anim");
+    // when a View Transition is running it animates the switch itself
+    if (!inViewTransition) root.classList.add("theme-anim");
     applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark", true);
     setTimeout(function () { root.classList.remove("theme-anim"); }, 450);
   });
@@ -725,6 +727,71 @@
 
   // re-render time strings when the language changes
   document.getElementById("langToggle").addEventListener("click", function () { renderTZ(); });
+
+  /* =========================================================
+     ANIMATED SWITCHES (language + theme)
+     - Chrome / Edge / Safari: View Transitions API
+         theme  -> circular reveal from the toggle button
+         lang   -> page slides & fades in the new reading direction
+     - other browsers: simple fade
+     - "reduce motion" users: instant switch
+     ========================================================= */
+  function animatedClick(btn, kind) {
+    document.addEventListener("click", function (e) {
+      if (!btn.contains(e.target) || replaying) return;
+      if (inViewTransition) { e.stopImmediatePropagation(); return; } // ignore clicks while an animation is running
+      if (reduce) return;                       // let the normal handlers run instantly
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      var switched = false;
+      var replay = function () {
+        if (switched) return;
+        switched = true;
+        replaying = true; btn.click(); replaying = false;
+      };
+
+      if (document.startViewTransition) {
+        var r = btn.getBoundingClientRect();
+        var x = r.left + r.width / 2, y = r.top + r.height / 2;
+        var cls = kind === "theme" ? "vt-theme" : (root.dataset.lang === "ar" ? "vt-to-en" : "vt-to-ar");
+        root.classList.remove("vt-theme", "vt-to-ar", "vt-to-en");
+        root.classList.add(cls);
+        inViewTransition = true;
+        var cleanup = function () { root.classList.remove(cls); inViewTransition = false; };
+        var vt = document.startViewTransition(replay);
+        vt.ready.catch(function () {}); // a skipped transition (e.g. double-click) is fine, the switch still happens
+        // safety net: if the browser hasn't run the switch yet (e.g. tab in background), skip the animation and switch now
+        setTimeout(function () {
+          if (!switched) { try { vt.skipTransition(); } catch (err) {} replay(); }
+        }, 800);
+        setTimeout(cleanup, 1200);
+        if (kind === "theme") {
+          vt.ready.then(function () {
+            var end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+            root.animate(
+              { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + end + "px at " + x + "px " + y + "px)"] },
+              { duration: 650, easing: "cubic-bezier(.4,0,.2,1)", pseudoElement: "::view-transition-new(root)" }
+            );
+          }).catch(function () {});
+        }
+        vt.finished.then(cleanup, cleanup);
+        return;
+      }
+
+      // fallback: fade the page out, switch, fade back in
+      if (kind === "theme") { replay(); return; }      // theme already has a colour cross-fade
+      var page = document.body;
+      var out = page.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" });
+      out.onfinish = function () {
+        replay();
+        page.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: "ease-out" });
+        out.cancel();
+      };
+    }, true); // capture phase: runs before the button's own handlers
+  }
+  animatedClick(document.getElementById("langToggle"), "lang");
+  animatedClick(themeBtn, "theme");
 
   /* ---------- Footer year ---------- */
   document.getElementById("year").textContent = new Date().getFullYear();
