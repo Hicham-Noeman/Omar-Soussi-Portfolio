@@ -10,6 +10,20 @@
      Leave it empty to show the "coming soon" message instead.
      ========================================================== */
   var CALENDLY_URL = "";
+
+  /* ==========================================================
+     SOCIAL LINKS: paste full profile links; leave "" to hide.
+     WhatsApp and email are always shown.
+     ========================================================== */
+  // PLACEHOLDERS: these point to the platforms' home pages for now.
+  // Replace each with Omar's real profile link, e.g. "https://instagram.com/omar.soussi"
+  var SOCIAL = {
+    instagram: "https://www.instagram.com/",
+    facebook:  "https://www.facebook.com/",
+    linkedin:  "https://www.linkedin.com/",
+    youtube:   "https://www.youtube.com/",
+    tiktok:    "https://www.tiktok.com/"
+  };
   var root = document.documentElement;
   root.classList.add("js");
 
@@ -309,6 +323,14 @@
 
   /* ---------- Service cards -> preselect form ---------- */
   var serviceSelect = document.getElementById("f-service");
+
+  // Every "book / free session" button preselects the free first session
+  document.querySelectorAll('a[href="#book"]').forEach(function (a) {
+    a.addEventListener("click", function () {
+      serviceSelect.value = "free";
+      serviceSelect.dispatchEvent(new Event("change"));
+    });
+  });
   document.querySelectorAll("[data-service]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       showTab("msg");
@@ -319,12 +341,49 @@
     });
   });
 
+  /* ---------- Social links ---------- */
+  var ICONS = {
+    whatsapp: '<path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.7-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.1-.3-.2-.5-.3Z"/>',
+    email: '<path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 6h18v12H3zM3 7l9 6 9-6"/>',
+    instagram: '<g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/>',
+    facebook: '<path fill="currentColor" d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.5 1.6-1.5h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.4 0-4.1 1.5-4.1 4.2v2.3H7.5V14h2.7v8h3.3Z"/>',
+    linkedin: '<path fill="currentColor" d="M4.5 9h3.6v11H4.5zM6.3 3.5a2.1 2.1 0 1 1 0 4.2 2.1 2.1 0 0 1 0-4.2ZM10.3 9h3.4v1.5h.1c.5-.9 1.7-1.8 3.4-1.8 3.7 0 4.3 2.4 4.3 5.4V20h-3.6v-5.2c0-1.3 0-2.9-1.8-2.9s-2.1 1.4-2.1 2.8V20h-3.6z"/>',
+    youtube: '<path fill="currentColor" fill-rule="evenodd" d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4a2.5 2.5 0 0 0-1.8 1.8A26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8c1.6.4 7.8.4 7.8.4s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8ZM10 15V9l5.2 3L10 15Z"/>',
+    tiktok: '<path fill="currentColor" d="M16.6 3c.3 2.2 1.7 3.7 3.9 3.9v3.2a7.4 7.4 0 0 1-3.9-1.2v6.4a5.8 5.8 0 1 1-5.8-5.8c.3 0 .6 0 .9.1v3.3a2.6 2.6 0 1 0 1.7 2.4V3h3.2Z"/>'
+  };
+  var NAMES = { whatsapp: "WhatsApp", email: "Email", instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn", youtube: "YouTube", tiktok: "TikTok" };
+  var links = [
+    ["whatsapp", "https://wa.me/" + PHONE],
+    ["email", "mailto:" + EMAIL]
+  ];
+  Object.keys(SOCIAL).forEach(function (k) { if (SOCIAL[k]) links.push([k, SOCIAL[k]]); });
+  var socialHTML = links.map(function (l) {
+    var ext = l[0] !== "email";
+    return '<a class="social social-' + l[0] + '" href="' + l[1] + '"' + (ext ? ' target="_blank" rel="noopener"' : "") +
+      ' aria-label="' + NAMES[l[0]] + '" title="' + NAMES[l[0]] + '"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
+      ICONS[l[0]] + "</svg></a>";
+  }).join("");
+  document.querySelectorAll("[data-socials]").forEach(function (el) { el.innerHTML = socialHTML; });
+
+  // Tell Google about the profiles too (structured data "sameAs")
+  // (placeholder home-page links like "https://www.instagram.com/" are skipped)
+  var sameAs = Object.keys(SOCIAL).map(function (k) { return SOCIAL[k]; })
+    .filter(function (u) { return u && !/^https?:\/\/[^\/]+\/?$/.test(u); });
+  var ld = document.querySelector('script[type="application/ld+json"]');
+  if (ld && sameAs.length) {
+    try {
+      var data = JSON.parse(ld.textContent);
+      data["@graph"][0].sameAs = sameAs;
+      ld.textContent = JSON.stringify(data);
+    } catch (e) {}
+  }
+
   /* ---------- Direct WhatsApp links get a greeting ---------- */
   document.querySelectorAll("[data-wa-direct]").forEach(function (a) {
     a.addEventListener("click", function () {
       var msg = current() === "ar"
-        ? "مرحباً أستاذ عمر، أودّ الاستفسار عن الدروس الخاصة."
-        : "Hello Omar, I'd like to ask about private lessons.";
+        ? "مرحباً أستاذ عمر، أودّ حجز الجلسة الأولى المجانية / الاستفسار عن الدروس الخاصة."
+        : "Hello Omar, I'd like to book the free first session / ask about private lessons.";
       a.href = "https://wa.me/" + PHONE + "?text=" + encodeURIComponent(msg);
     });
   });
