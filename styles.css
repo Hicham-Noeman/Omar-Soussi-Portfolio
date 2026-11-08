@@ -6,6 +6,7 @@
   --primary-dark: #0a3631;
   --gold: #b8873b;
   --gold-light: #e7c27d;
+  --gold-text: #7f5b1c; /* darker gold for small text: passes WCAG AA (4.5:1) on paper & tint */
   --paper: #faf6ee;
   --tint: #f2ecdf;
   --card: #ffffff;
@@ -121,7 +122,7 @@ button { font: inherit; cursor: pointer; }
 }
 .hero-grid { position: relative; display: grid; grid-template-columns: 1.25fr .9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
 .eyebrow {
-  display: inline-block; font-size: .9rem; font-weight: 600; color: var(--gold);
+  display: inline-block; font-size: .9rem; font-weight: 600; color: var(--gold-text);
   letter-spacing: .02em; margin-bottom: 14px;
 }
 html[data-lang="en"] .eyebrow { text-transform: uppercase; letter-spacing: .1em; font-size: .78rem; }
@@ -172,7 +173,7 @@ html[data-lang="en"] .portrait-caption { font-family: "Fraunces", serif; font-st
 .section-head { margin-bottom: 40px; max-width: 680px; }
 .section-head.center { margin-inline: auto; text-align: center; }
 .section-head h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); }
-.kicker { color: var(--gold); font-weight: 600; font-size: .95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.kicker { color: var(--gold-text); font-weight: 600; font-size: .95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
 .section-head.center .kicker { justify-content: center; }
 .kicker::before { content: ""; width: 28px; height: 2px; background: var(--gold); }
 html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; font-size: .78rem; }
@@ -207,7 +208,7 @@ html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; 
   align-self: flex-start; background: none; border: 0; padding: 0; color: var(--primary);
   font-weight: 600; font-size: .95rem;
 }
-.card-link:hover { color: var(--gold); }
+.card-link:hover { color: var(--gold-text); }
 .card-accent { background: var(--primary); border-color: var(--primary); }
 .card-accent h3, .card-accent p { color: #fff; }
 .card-accent p { opacity: .85; }
@@ -218,7 +219,7 @@ html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; 
 .steps li { display: flex; gap: 16px; align-items: flex-start; }
 .step-num {
   flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-  border: 1.5px solid var(--gold); color: var(--gold); font-family: "Fraunces", serif; font-weight: 700;
+  border: 1.5px solid var(--gold); color: var(--gold-text); font-family: "Fraunces", serif; font-weight: 700;
 }
 .steps h4 { font-size: 1.02rem; margin-bottom: 2px; }
 .steps p { color: var(--ink-soft); font-size: .93rem; margin: 0; }
@@ -239,7 +240,7 @@ html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; 
   background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 26px;
 }
 .tl-body h3 { font-size: 1.15rem; margin: 8px 0 2px; }
-.tl-org { color: var(--gold); font-weight: 500; font-size: .93rem; margin-bottom: 10px; }
+.tl-org { color: var(--gold-text); font-weight: 500; font-size: .93rem; margin-bottom: 10px; }
 .tl-body ul li { position: relative; padding-inline-start: 18px; color: var(--ink-soft); font-size: .96rem; margin-bottom: 4px; }
 .tl-body ul li::before { content: ""; position: absolute; inset-inline-start: 0; top: .75em; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); opacity: .5; }
 .tag { display: inline-block; font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
@@ -269,7 +270,7 @@ html[data-lang="en"] .kicker { text-transform: uppercase; letter-spacing: .1em; 
 /* education */
 .edu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 70px); }
 .degree { border-inline-start: 3px solid var(--gold); padding-inline-start: 20px; margin-bottom: 28px; }
-.degree-years { display: inline-block; font-size: .85rem; font-weight: 600; color: var(--gold); margin-bottom: 4px; }
+.degree-years { display: inline-block; font-size: .85rem; font-weight: 600; color: var(--gold-text); margin-bottom: 4px; }
 .degree h3 { font-size: 1.2rem; }
 .degree p { color: var(--ink-soft); font-size: .97rem; margin: 0; }
 .list-title { font-size: 1.15rem; margin-bottom: 16px; }
@@ -424,6 +425,60 @@ html[data-lang="ar"] .offer-stamp { font-family: "Amiri", serif; font-size: 1.5r
 .social-tiktok:hover { background: #111; }
 .socials-dark .social { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.15); color: var(--gold-light); width: 40px; height: 40px; }
 
+/* disabled session formats (free session = online only) */
+.seg input:disabled + span { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+.form-privacy { margin: 14px 0 0; font-size: .85rem; color: var(--ink-soft); text-align: center; }
+.link-btn {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--primary);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.ci-wa { color: #1f9d55; }
+
+/* FAQ */
+.faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(24px, 5vw, 70px); align-items: start; }
+.faq-grid .section-head { position: sticky; top: calc(var(--header-h) + 24px); }
+.faq-list { display: grid; gap: 12px; }
+.faq { background: #fff; border: 1px solid var(--line); border-radius: 16px; transition: border-color .2s, box-shadow .2s; }
+.faq[open] { border-color: #d9cdb3; box-shadow: var(--shadow); }
+.faq summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 22px; font-weight: 600; font-size: 1.02rem;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: ""; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--tint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%230f4c45' stroke-width='2.2' stroke-linecap='round' d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center / 16px no-repeat;
+  transition: transform .25s, background-color .2s;
+}
+.faq[open] summary::after { transform: rotate(45deg); background-color: #e3efe9; }
+.faq summary:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 16px; }
+.faq-a { padding: 0 22px 18px; }
+.faq-a p { margin: 0; color: var(--ink-soft); }
+
+/* privacy dialog */
+.privacy {
+  width: min(640px, calc(100% - 32px)); max-height: min(80vh, 760px); padding: 0;
+  border: 0; border-radius: 20px; background: #fff; color: var(--ink);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.45);
+}
+.privacy::backdrop { background: rgba(10, 30, 27, .55); }
+.privacy[open] { display: flex; flex-direction: column; }
+.privacy-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--line);
+}
+.privacy-head h2 { margin: 0; font-size: 1.5rem; }
+.privacy-close {
+  width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--tint); color: var(--ink);
+  display: grid; place-items: center; font-size: .9rem; flex: none;
+}
+.privacy-close:hover { background: #e7dfcf; }
+.privacy-body { padding: 20px 24px 24px; overflow-y: auto; }
+.privacy-body h3 { font-size: 1.02rem; margin: 20px 0 4px; }
+.privacy-body p { color: var(--ink-soft); font-size: .96rem; margin: 0; }
+.privacy-intro { background: #e9f1ee; color: var(--primary) !important; border-radius: 12px; padding: 12px 14px; font-weight: 500; }
+.privacy-updated { margin-top: 22px !important; font-size: .82rem !important; }
+
 .footer-link { color: var(--gold-light); text-decoration: none; }
 .footer-link:hover { text-decoration: underline; }
 .sep { margin: 0 6px; opacity: .5; }
@@ -554,6 +609,8 @@ body.no-scroll { overflow: hidden; }
   .about-grid, .edu-grid, .book-grid { grid-template-columns: 1fr; }
   .about-grid .section-head, .book-intro { margin-bottom: 0; }
   .cv-card { grid-template-columns: 1fr; }
+  .faq-grid { grid-template-columns: 1fr; }
+  .faq-grid .section-head { position: static; margin-bottom: 0; }
   .offer-banner { grid-template-columns: auto 1fr; }
   .offer-btn { grid-column: 1 / -1; justify-self: start; }
   .hero-text .offer-pill { margin-inline: auto; }

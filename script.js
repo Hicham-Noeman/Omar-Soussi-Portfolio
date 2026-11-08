@@ -2,7 +2,6 @@
   "use strict";
 
   var PHONE = "96171752289";
-  var EMAIL = "omarsoussi609@gmail.com";
 
   /* ==========================================================
      CALENDLY: paste Omar's booking link between the quotes,
@@ -13,7 +12,7 @@
 
   /* ==========================================================
      SOCIAL LINKS: paste full profile links; leave "" to hide.
-     WhatsApp and email are always shown.
+     WhatsApp is always shown.
      ========================================================== */
   // PLACEHOLDERS: these point to the platforms' home pages for now.
   // Replace each with Omar's real profile link, e.g. "https://instagram.com/omar.soussi"
@@ -352,14 +351,11 @@
     tiktok: '<path fill="currentColor" d="M16.6 3c.3 2.2 1.7 3.7 3.9 3.9v3.2a7.4 7.4 0 0 1-3.9-1.2v6.4a5.8 5.8 0 1 1-5.8-5.8c.3 0 .6 0 .9.1v3.3a2.6 2.6 0 1 0 1.7 2.4V3h3.2Z"/>'
   };
   var NAMES = { whatsapp: "WhatsApp", email: "Email", instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn", youtube: "YouTube", tiktok: "TikTok" };
-  var links = [
-    ["whatsapp", "https://wa.me/" + PHONE],
-    ["email", "mailto:" + EMAIL]
-  ];
+  var links = [["whatsapp", "https://wa.me/" + PHONE]];
   Object.keys(SOCIAL).forEach(function (k) { if (SOCIAL[k]) links.push([k, SOCIAL[k]]); });
   var socialHTML = links.map(function (l) {
-    var ext = l[0] !== "email";
-    return '<a class="social social-' + l[0] + '" href="' + l[1] + '"' + (ext ? ' target="_blank" rel="noopener"' : "") +
+    return '<a class="social social-' + l[0] + '" href="' + l[1] + '" target="_blank" rel="noopener"' +
+      (l[0] === "whatsapp" ? " data-wa-direct" : "") +
       ' aria-label="' + NAMES[l[0]] + '" title="' + NAMES[l[0]] + '"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
       ICONS[l[0]] + "</svg></a>";
   }).join("");
@@ -404,10 +400,20 @@
     }
   };
 
-  var lastChannel = "wa";
-  form.querySelectorAll("button[type=submit]").forEach(function (b) {
-    b.addEventListener("click", function () { lastChannel = b.dataset.channel; });
-  });
+  // The free first session is online only: lock the format to "Online" when it's chosen
+  function syncMode() {
+    var free = serviceSelect.value === "free";
+    form.querySelectorAll("input[name=mode]").forEach(function (r) {
+      if (free) {
+        r.disabled = r.value !== "online";
+        if (r.value === "online") r.checked = true;
+      } else {
+        r.disabled = false;
+      }
+    });
+  }
+  serviceSelect.addEventListener("change", syncMode);
+  syncMode();
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -437,19 +443,28 @@
     if (message) lines.push("", L.message + ":", message);
     var text = lines.join("\n");
 
-    if (lastChannel === "email") {
-      location.href = "mailto:" + EMAIL +
-        "?subject=" + encodeURIComponent(L.subject + name) +
-        "&body=" + encodeURIComponent(text);
-    } else {
-      window.open("https://wa.me/" + PHONE + "?text=" + encodeURIComponent(text), "_blank", "noopener");
-    }
+    window.open("https://wa.me/" + PHONE + "?text=" + encodeURIComponent(text), "_blank", "noopener");
   });
 
   form.elements.name.addEventListener("input", function () {
     this.classList.remove("invalid");
     document.getElementById("formError").hidden = true;
   });
+
+  /* ---------- Privacy note dialog ---------- */
+  var privacy = document.getElementById("privacyDialog");
+  document.querySelectorAll("[data-privacy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (privacy.showModal) privacy.showModal(); else privacy.setAttribute("open", "");
+      document.body.classList.add("no-scroll");
+    });
+  });
+  function closePrivacy() {
+    if (privacy.close) privacy.close(); else privacy.removeAttribute("open");
+  }
+  privacy.querySelector("[data-close]").addEventListener("click", closePrivacy);
+  privacy.addEventListener("click", function (e) { if (e.target === privacy) closePrivacy(); }); // click on backdrop
+  privacy.addEventListener("close", function () { document.body.classList.remove("no-scroll"); });
 
   /* ---------- Footer year ---------- */
   document.getElementById("year").textContent = new Date().getFullYear();
