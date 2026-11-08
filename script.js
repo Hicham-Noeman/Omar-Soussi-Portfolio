@@ -3,6 +3,13 @@
 
   var PHONE = "96171752289";
   var EMAIL = "omarsoussi609@gmail.com";
+
+  /* ==========================================================
+     CALENDLY: paste Omar's booking link between the quotes,
+     e.g. "https://calendly.com/omarsoussi/private-lesson"
+     Leave it empty to show the "coming soon" message instead.
+     ========================================================== */
+  var CALENDLY_URL = "";
   var root = document.documentElement;
   root.classList.add("js");
 
@@ -219,11 +226,92 @@
     refreshers.forEach(function (fn) { fn(); });
   });
 
-  /* ---------- Service cards -> preselect form ---------- */
+  /* ---------- Booking tabs: calendar / message ---------- */
   var form = document.getElementById("bookForm");
+  var tabCal = document.getElementById("tab-cal");
+  var tabMsg = document.getElementById("tab-msg");
+  var panelCal = document.getElementById("panel-cal");
+  var calEmbed = document.getElementById("calEmbed");
+  var calLoaded = false;
+
+  function showTab(which) {
+    var cal = which === "cal";
+    tabCal.setAttribute("aria-selected", String(cal));
+    tabMsg.setAttribute("aria-selected", String(!cal));
+    panelCal.hidden = !cal;
+    form.hidden = cal;
+    if (cal) loadCalendly();
+  }
+  tabCal.addEventListener("click", function () { showTab("cal"); });
+  tabMsg.addEventListener("click", function () { showTab("msg"); });
+  document.getElementById("calToMsg").addEventListener("click", function () {
+    showTab("msg");
+    document.getElementById("f-name").focus();
+  });
+  [tabCal, tabMsg].forEach(function (t) {
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        var other = t === tabCal ? tabMsg : tabCal;
+        other.focus(); other.click();
+      }
+    });
+  });
+
+  function loadCalendly() {
+    if (calLoaded) return;
+    calLoaded = true;
+    if (!CALENDLY_URL) { document.getElementById("calEmpty").hidden = false; return; }
+
+    calEmbed.innerHTML = '<div class="cal-loading"><span class="ar">جارٍ تحميل التقويم…</span><span class="en">Loading calendar…</span></div>';
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://assets.calendly.com/assets/external/widget.css";
+    document.head.appendChild(link);
+    var s = document.createElement("script");
+    s.src = "https://assets.calendly.com/assets/external/widget.js";
+    s.async = true;
+    s.onload = function () {
+      calEmbed.innerHTML = "";
+      calEmbed.classList.add("loaded");
+      var url = CALENDLY_URL + (CALENDLY_URL.indexOf("?") > -1 ? "&" : "?") +
+        "hide_gdpr_banner=1&primary_color=0f4c45";
+      window.Calendly.initInlineWidget({ url: url, parentElement: calEmbed });
+    };
+    s.onerror = function () {
+      calEmbed.innerHTML = "";
+      document.getElementById("calEmpty").hidden = false;
+    };
+    document.body.appendChild(s);
+  }
+
+  // Load the calendar only when the booking section comes near the screen
+  if (!CALENDLY_URL) {
+    showTab("msg"); // no calendar yet: open on the message form
+  } else if ("IntersectionObserver" in window) {
+    var calIO = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !panelCal.hidden) { loadCalendly(); calIO.disconnect(); }
+    }, { rootMargin: "400px 0px" });
+    calIO.observe(panelCal);
+  } else {
+    loadCalendly();
+  }
+
+  // Thank-you note after a booking is made inside Calendly
+  window.addEventListener("message", function (e) {
+    if (e.origin === "https://calendly.com" && e.data && e.data.event === "calendly.event_scheduled") {
+      var note = panelCal.querySelector(".cal-note");
+      note.innerHTML = current() === "ar"
+        ? "✅ تمّ الحجز! ستصلك رسالة تأكيد على بريدك الإلكتروني."
+        : "✅ Booked! A confirmation email is on its way.";
+    }
+  });
+
+  /* ---------- Service cards -> preselect form ---------- */
   var serviceSelect = document.getElementById("f-service");
   document.querySelectorAll("[data-service]").forEach(function (btn) {
     btn.addEventListener("click", function () {
+      showTab("msg");
       serviceSelect.value = btn.dataset.service;
       serviceSelect.dispatchEvent(new Event("change"));
       document.getElementById("book").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
